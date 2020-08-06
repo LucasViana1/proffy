@@ -25,7 +25,21 @@ export default class ClassesController {
 
     const timeInMinutes = convertHourForMinutes(time);
 
-    const classes = await db('classes').where('classes.subject', '=', subject);
+    const classes = await db('classes')
+      .whereExists(function () {
+        this.select('class_schedule.*')
+          .from('class_schedule')
+          // validated filter for the week day
+          .whereRaw('`class_schedule`.`class_id` = `classes`.`id`')
+          .whereRaw('`class_schedule`.`week_day` = ??', [Number(week_day)])
+          // validated filter for the small time
+          .whereRaw('`class_schedule`.`from` <= ??', [timeInMinutes])
+          // validated filter for the bigger time
+          .whereRaw('`class_schedule`.`to` > ??', [timeInMinutes]);
+      })
+      .where('classes.subject', '=', subject)
+      .join('users', 'classes.user_id', '=', 'users.id')
+      .select('classes.*', 'users.*');
 
     return response.json(classes);
   }
@@ -51,7 +65,7 @@ export default class ClassesController {
         bio,
       });
 
-      const user_id = insertedUsersIds[0];
+      const [user_id] = insertedUsersIds;
 
       const insertedClassesIds = await trx('classes').insert({
         subject,
@@ -59,7 +73,7 @@ export default class ClassesController {
         user_id,
       });
 
-      const class_id = insertedClassesIds[0];
+      const [class_id] = insertedClassesIds;
 
       const classSchedule = schedule.map((scheduleItem: ScheduleItem) => {
         return {
