@@ -56,7 +56,8 @@
     display: block;
 }
 
-.teacher-item footer button {
+.teacher-item footer a {
+    width: 20rem;
     padding: 1.6rem;
     height: 5.6rem;
     background: var(--color-secundary);
@@ -67,17 +68,19 @@
     font: 700 1.4rem Archivo;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-evenly;
     transition: 0.2s;
+    text-decoration: none;
 }
 
-.teacher-item footer button img {
+.teacher-item footer a:hover {
+    background: var(--color-secundary-dark);
+}
+
+.teacher-item footer a img {
     margin-right: 0.5rem;
 }
 
-.teacher-item footer button:hover {
-    background: var(--color-secundary-dark);
-}
 
 @media (min-width: 700px) {
 
