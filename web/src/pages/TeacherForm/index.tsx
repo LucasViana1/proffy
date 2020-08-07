@@ -1,4 +1,5 @@
 import React, { useState, useCallback, FormEvent } from 'react';
+import { useHistory } from 'react-router-dom';
 
 import './styles.css';
 import warningIcon from '../../assets/images/icons/warning.svg';
@@ -7,6 +8,7 @@ import PageHeader from '../../components/PageHeader';
 import Input from '../../components/Input';
 import Textarea from '../../components/TextArea';
 import Select from '../../components/Select';
+import api from '../../services/api';
 
 const TeacherForm: React.FC = () => {
   const [scheduleItems, setScheduleItems] = useState([
@@ -21,20 +23,51 @@ const TeacherForm: React.FC = () => {
   const [subject, setSubject] = useState('');
   const [cost, setCost] = useState('');
 
+  const history = useHistory();
+
   const addNewScheduleItem = useCallback(() => {
     setScheduleItems([...scheduleItems, { week_day: 0, from: '', to: '' }]);
   }, [scheduleItems]);
 
   const setScheduleItemValue = useCallback(
-    (index: number, field: string, value: string) => {},
-    []
+    (position: number, field: string, value: string) => {
+      const updatedScheduleItems = scheduleItems.map((scheduleItem, index) => {
+        if (index === position) {
+          return { ...scheduleItem, [field]: value };
+        }
+        return scheduleItem;
+      });
+
+      setScheduleItems(updatedScheduleItems);
+    },
+    [scheduleItems]
   );
 
-  const handleCreateClass = useCallback((e: FormEvent) => {
-    // submit
+  const handleCreateClass = useCallback(
+    (e: FormEvent) => {
+      // submit
+      api
+        .post('classes', {
+          name,
+          avatar,
+          whatsapp,
+          bio,
+          subject,
+          cost: Number(cost),
+          schedule: scheduleItems,
+        })
+        .then(() => {
+          alert('Cadastro realizado com sucesso');
+          history.push('/');
+        })
+        .catch(() => {
+          alert('Erro no cadastro');
+        });
 
-    e.preventDefault();
-  }, []);
+      e.preventDefault();
+    },
+    [avatar, bio, cost, history, name, scheduleItems, subject, whatsapp]
+  );
 
   return (
     <div id='page-teacher-form' className='container'>
@@ -105,12 +138,18 @@ const TeacherForm: React.FC = () => {
               </button>
             </legend>
 
-            {scheduleItems.map((scheduleItem) => (
-              <div key={scheduleItem.week_day} className='schedule-item'>
+            {scheduleItems.map((scheduleItem, index) => (
+              <div
+                key={`${scheduleItem.week_day + index}`}
+                className='schedule-item'
+              >
                 <Select
                   name='week_day'
                   label='Dia da semana'
-                  // IMPLEMENT ONCHANGE EVENT
+                  value={scheduleItem.week_day}
+                  onChange={(e) =>
+                    setScheduleItemValue(index, 'week_day', e.target.value)
+                  }
                   options={[
                     { value: '0', label: 'Domingo' },
                     { value: '1', label: 'Segunda' },
@@ -121,8 +160,24 @@ const TeacherForm: React.FC = () => {
                     { value: '6', label: 'Sábado' },
                   ]}
                 />
-                <Input name='from' label='Das' type='time' />
-                <Input name='to' label='Até' type='time' />
+                <Input
+                  name='from'
+                  label='Das'
+                  type='time'
+                  value={scheduleItem.from}
+                  onChange={(e) =>
+                    setScheduleItemValue(index, 'from', e.target.value)
+                  }
+                />
+                <Input
+                  name='to'
+                  label='Até'
+                  type='time'
+                  value={scheduleItem.to}
+                  onChange={(e) =>
+                    setScheduleItemValue(index, 'to', e.target.value)
+                  }
+                />
               </div>
             ))}
           </fieldset>
